@@ -8,6 +8,7 @@ TagManager:
   - RightHandTag
   - Sliceable
   - Slicer
+  - Drawing
   layers:
   - Default
   - TransparentFX
@@ -17,8 +18,8 @@ TagManager:
   - UI
   - Player
   - Interactable
-  - 
-  - 
+  - Substance
+  - Marking
   - 
   - 
   - 

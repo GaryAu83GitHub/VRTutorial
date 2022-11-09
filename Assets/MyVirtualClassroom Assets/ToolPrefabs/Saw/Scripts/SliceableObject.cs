@@ -30,10 +30,4 @@ public class SliceableObject : MonoBehaviour
         if(!other.transform.CompareTag("Slicer"))
             return;
     }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (!other.transform.CompareTag("Slicer"))
-            return;
-    }
 }

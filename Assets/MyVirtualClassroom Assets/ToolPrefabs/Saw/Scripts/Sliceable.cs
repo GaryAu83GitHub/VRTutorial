@@ -48,4 +48,10 @@ public class Sliceable : MonoBehaviour
         get { return _smoothVerticices; }
         set { _smoothVerticices = value; }
     }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log("Collision with " + collision.transform.name);
+    }
+
 }

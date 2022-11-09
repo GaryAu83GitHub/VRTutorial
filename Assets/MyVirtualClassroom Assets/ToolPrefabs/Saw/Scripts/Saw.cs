@@ -55,7 +55,7 @@ public class Saw : MonoBehaviour
         mySawTopTipExitPosition = SawBladeTopTip.position;
         //mySawBottonTipExitPosition = SawBladeBottonTip.position;
 
-        //Slice(other.gameObject);
+        Slice(other.gameObject);
     }
 
     private void Slice(GameObject aSlicingObject)

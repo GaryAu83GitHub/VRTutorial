@@ -3,6 +3,13 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
+/// <summary>
+/// This class is for creating STRAIGHT line object for drawing line tools that will be a child objects
+/// in substance objects.
+/// 
+/// Object with this class bounded will only be created when a substance object being touch by
+/// a tool object that is deemed to have drawing capability 
+/// </summary>
 public class MarkingLine : MonoBehaviour
 {
     [SerializeField]
@@ -26,6 +33,9 @@ public class MarkingLine : MonoBehaviour
         myIsDrawing = !myIsDrawing;
         CreateLine();
         myLine.SetPosition(0, aPos);
+        myLine.SetPosition(1, aPos);
+
+        Debug.Log("Line start at " + aPos.ToString());
     }
 
     /// <summary>
@@ -36,6 +46,7 @@ public class MarkingLine : MonoBehaviour
     {
         myIsDrawing = !myIsDrawing;
         myLine.SetPosition(1, aStopPos);
+        Debug.Log("Line end at " + aStopPos.ToString());
     }
 
     /// <summary>
@@ -49,11 +60,22 @@ public class MarkingLine : MonoBehaviour
             return;
         myLine.SetPosition(1, aCurrentPos);
     }
-
+    
+    /// <summary>
+    /// When the substance objects start to draw, the object will first be adding the LineRender
+    /// Component to the object and pass the new added component to the LineRender instance in the
+    /// class.
+    /// 
+    /// If the LineRender component failed to be added, the function will be ceased before setting
+    /// the selected drawing colour, the defaul material and the minimal width of the line
+    /// </summary>
     private void CreateLine()
     {
         transform.AddComponent<LineRenderer>();
         myLine = GetComponent<LineRenderer>();
+
+        if (myLine == null)
+            return;
 
         myLine.startColor = myLine.endColor = DrawColor;
         myLine.material = LineMaterial;

@@ -95,10 +95,10 @@ GameObject:
   - component: {fileID: 4330551802465137457}
   - component: {fileID: 7765889661261036734}
   - component: {fileID: 4387340912004880376}
-  - component: {fileID: 4380659460778279930}
+  - component: {fileID: 776017440}
   m_Layer: 0
   m_Name: Pen
-  m_TagString: Untagged
+  m_TagString: Drawing
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -133,8 +133,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.0127507625, y: 0.21084027, z: 0.0132902395}
-  m_Center: {x: -1.0412563e-17, y: -0.00317353, z: 0}
+  m_Size: {x: 0.0127507625, y: 0.20035295, z: 0.0132902395}
+  m_Center: {x: -2.549044e-19, y: 0.00014000759, z: 0}
 --- !u!54 &7765889661261036734
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -146,7 +146,7 @@ Rigidbody:
   m_Mass: 1
   m_Drag: 0
   m_AngularDrag: 0.05
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
@@ -266,7 +266,7 @@ MonoBehaviour:
   m_ForceGravityOnDetach: 0
   m_RetainTransformParent: 1
   m_AttachPointCompatibilityMode: 0
---- !u!114 &4380659460778279930
+--- !u!114 &776017440
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -287,7 +287,7 @@ MonoBehaviour:
       m_Name: Drawing Button
       m_Type: 0
       m_ExpectedControlType: 
-      m_Id: a1d5ce48-84be-47ef-8ca6-333c7bd132ba
+      m_Id: bd610909-cdb3-4750-9abe-4dbf6e373688
       m_Processors: 
       m_Interactions: 
       m_SingletonActionBindings: []
@@ -552,6 +552,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4235288469065836808}
+  - component: {fileID: 9009880700926799492}
   m_Layer: 0
   m_Name: Tip
   m_TagString: Untagged
@@ -567,13 +568,26 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4235288469065836855}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.10901, z: 0}
+  m_LocalPosition: {x: -0, y: -0.106, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4235288467777914586}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &9009880700926799492
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4235288469065836855}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.0055
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &4235288469165706506
 GameObject:
   m_ObjectHideFlags: 0
