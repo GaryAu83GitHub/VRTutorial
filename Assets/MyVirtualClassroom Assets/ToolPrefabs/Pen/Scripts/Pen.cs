@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.XR.OpenVR;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,7 +11,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 public class Pen : MonoBehaviour
 {
     [SerializeField]
-    private Transform PenTip;
+    private Transform PenTip, LeftHand, RightHand;
 
     [SerializeField]
     private GameObject MarkingLineObjct;
@@ -19,18 +20,42 @@ public class Pen : MonoBehaviour
     public InputActionProperty DrawingButton;
 
     private MarkingLine myLine;
+    private Rigidbody myRigidbody;
+    private Transform myGrabHandTransform;
 
     private bool myIsDrawing = false;
+    private bool myTriggerGrabInteraction = false;
 
-    private BoxHitSide myDrawSide = BoxHitSide.NONE;
-    private Vector3 myTouchingPosition = Vector3.zero;
-    private Vector3 myDrawingObjectMaxPos = Vector3.zero;
-    private Vector3 myDrawingObjectMinPos = Vector3.zero;
+    private Vector3 tempPosition;
+    private bool tempEnableXRGrab = false;
+
+    private Vector3 tempHangingPos = Vector3.zero;
+
+    private float myLenghtBetweenCenterAndTip = 0f;
+
+    private SubstanceInfo myDrawObjectInfo;
+
+    private void Start()
+    {
+        tempHangingPos = transform.position;
+        tempEnableXRGrab = GetComponent<XRGrabInteractable>().enabled;
+
+        myLenghtBetweenCenterAndTip = (transform.position - PenTip.position).magnitude;
+        myRigidbody = GetComponent<Rigidbody>();
+
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+      
+
+    }
 
     // Update is called once per frame
     void Update()
     {
         DrawLine();
+        //TriggerXRGrab(DrawingButton.action.IsPressed());
     }
 
     /// <summary>
@@ -73,6 +98,10 @@ public class Pen : MonoBehaviour
         if (!myIsDrawing)
             return;
 
+        transform.position = RightHand.position;
+        Debug.Log("Pen Position: " + transform.position.ToString());
+        Debug.Log("Hand Position: " + RightHand.position.ToString());
+
         myLine.DrawingLine(TipOnFacePosition());
     }
 
@@ -85,35 +114,15 @@ public class Pen : MonoBehaviour
     /// <param name="anInfo">The info of the collided substance</param>
     public void StartDrawOnTrigger(Transform aParentObject, SubstanceInfo anInfo)
     {
-        myTouchingPosition = anInfo.TouchPoint;
-        myDrawSide = anInfo.TouchSide;
-        myDrawingObjectMaxPos = anInfo.MaxPos;
-        myDrawingObjectMinPos = anInfo.MinPos;
+        myDrawObjectInfo = new SubstanceInfo(anInfo);
+
+
+        FreezeAxis(myDrawObjectInfo.TouchSide);
 
         myLine = Instantiate(MarkingLineObjct, GetEdgePos(), Quaternion.identity, aParentObject).GetComponent<MarkingLine>();
         myLine.StartDrawing(GetEdgePos());
         myIsDrawing = true;
     }
-
-    //public void StartDrawOnTrigger(Transform aParentObject, Vector3 aTouchingPosition, BoxHitSide aFace)
-    //{
-    //    myTouchingPosition = aTouchingPosition;
-    //    myDrawSide = aFace;
-
-    //    Vector3 startPos = GetEdgePos();
-    //    myLine = Instantiate(MarkingLineObjct, startPos, Quaternion.identity, aParentObject).GetComponent<MarkingLine>();
-    //    myLine.StartDrawing(startPos);
-    //    myIsDrawing = true;
-
-    //}
-
-    //public void StopDrawOnTrigger(Vector3 anObjectMaxPoint, Vector3 anObjectMinPoint)
-    //{
-    //    Vector3 endpos = GetEdgePos();
-
-    //    myLine.StopDrawing(endpos);
-    //    myIsDrawing = false;
-    //}
 
     /// <summary>
     /// Put the line on the last position when this function is called and trigger of the line drawing
@@ -121,6 +130,7 @@ public class Pen : MonoBehaviour
     public void StopDrawOnTrigger()
     {
         myLine.StopDrawing(GetEdgePos());
+        myRigidbody.isKinematic = false;
         myIsDrawing = false;
     }
 
@@ -131,12 +141,12 @@ public class Pen : MonoBehaviour
     /// <returns>The position with the locked axel on the touching face</returns>
     private Vector3 TipOnFacePosition()
     {
-        if (myDrawSide == BoxHitSide.RIGHT || myDrawSide == BoxHitSide.LEFT)
-            return new Vector3(myTouchingPosition.x, PenTip.position.y, PenTip.position.z);
-        else if (myDrawSide == BoxHitSide.TOP || myDrawSide == BoxHitSide.BOTTOM)
-            return new Vector3(PenTip.position.x, myTouchingPosition.y, PenTip.position.z);
-        else if (myDrawSide == BoxHitSide.FORWARD || myDrawSide == BoxHitSide.BACK)
-            return new Vector3(PenTip.position.x, PenTip.position.y, myTouchingPosition.z);
+        if (myDrawObjectInfo.TouchSide == BoxHitSide.RIGHT || myDrawObjectInfo.TouchSide == BoxHitSide.LEFT)
+            return new Vector3(myDrawObjectInfo.TouchPoint.x, PenTip.position.y, PenTip.position.z);
+        else if (myDrawObjectInfo.TouchSide == BoxHitSide.TOP || myDrawObjectInfo.TouchSide == BoxHitSide.BOTTOM)
+            return new Vector3(PenTip.position.x, myDrawObjectInfo.TouchPoint.y, PenTip.position.z);
+        else if (myDrawObjectInfo.TouchSide == BoxHitSide.FORWARD || myDrawObjectInfo.TouchSide == BoxHitSide.BACK)
+            return new Vector3(PenTip.position.x, PenTip.position.y, myDrawObjectInfo.TouchPoint.z);
 
         return Vector3.zero;
     }
@@ -148,22 +158,23 @@ public class Pen : MonoBehaviour
     private Vector3 GetEdgePos()
     {
         Vector3 point = TipOnFacePosition();
-        if (myDrawSide == BoxHitSide.RIGHT || myDrawSide == BoxHitSide.LEFT)
+
+        if (myDrawObjectInfo.TouchSide == BoxHitSide.RIGHT || myDrawObjectInfo.TouchSide == BoxHitSide.LEFT)
         {
-            point.y = GetMaxMinValue(point.y, myDrawingObjectMaxPos.y, myDrawingObjectMinPos.y);
-            point.z = GetMaxMinValue(point.z, myDrawingObjectMaxPos.z, myDrawingObjectMinPos.z);
+            point.y = GetMaxMinValue(point.y, myDrawObjectInfo.MaxPos.y, myDrawObjectInfo.MinPos.y);
+            point.z = GetMaxMinValue(point.z, myDrawObjectInfo.MaxPos.z, myDrawObjectInfo.MinPos.z);
         }
-        else if (myDrawSide == BoxHitSide.TOP || myDrawSide == BoxHitSide.BOTTOM)
+        else if (myDrawObjectInfo.TouchSide == BoxHitSide.TOP || myDrawObjectInfo.TouchSide == BoxHitSide.BOTTOM)
         {
-            point.x = GetMaxMinValue(point.x, myDrawingObjectMaxPos.x, myDrawingObjectMinPos.x);
-            point.z = GetMaxMinValue(point.z, myDrawingObjectMaxPos.z, myDrawingObjectMinPos.z);
+            point.x = GetMaxMinValue(point.x, myDrawObjectInfo.MaxPos.x, myDrawObjectInfo.MinPos.x);
+            point.z = GetMaxMinValue(point.z, myDrawObjectInfo.MaxPos.z, myDrawObjectInfo.MinPos.z);
         }
-        else if (myDrawSide == BoxHitSide.FORWARD || myDrawSide == BoxHitSide.BACK) 
+        else if (myDrawObjectInfo.TouchSide == BoxHitSide.FORWARD || myDrawObjectInfo.TouchSide == BoxHitSide.BACK) 
         {
-            point.x = GetMaxMinValue(point.x, myDrawingObjectMaxPos.x, myDrawingObjectMinPos.x);
-            point.y = GetMaxMinValue(point.y, myDrawingObjectMaxPos.y, myDrawingObjectMinPos.y);
+            point.x = GetMaxMinValue(point.x, myDrawObjectInfo.MaxPos.x, myDrawObjectInfo.MinPos.x);
+            point.y = GetMaxMinValue(point.y, myDrawObjectInfo.MaxPos.y, myDrawObjectInfo.MinPos.y);
         }
-            return point;
+        return point;
     }
 
     /// <summary>
@@ -182,5 +193,114 @@ public class Pen : MonoBehaviour
         else if(aCompareValue < aMinValue)
             return aMinValue;
         return aCompareValue;
+    }
+
+    private bool WithinSubstanceBoundary(Vector3 aTipPosition)
+    {
+        if (myDrawObjectInfo.TouchSide == BoxHitSide.RIGHT || myDrawObjectInfo.TouchSide == BoxHitSide.LEFT)
+        {
+            if(WithinBoundaryValue(aTipPosition.y, myDrawObjectInfo.MaxPos.y, myDrawObjectInfo.MinPos.y) ||
+                WithinBoundaryValue(aTipPosition.z, myDrawObjectInfo.MaxPos.z, myDrawObjectInfo.MinPos.z))
+                return true;
+        }
+        else if (myDrawObjectInfo.TouchSide == BoxHitSide.TOP || myDrawObjectInfo.TouchSide == BoxHitSide.BOTTOM)
+        {
+            if (WithinBoundaryValue(aTipPosition.x, myDrawObjectInfo.MaxPos.x, myDrawObjectInfo.MinPos.x) ||
+                    WithinBoundaryValue(aTipPosition.z, myDrawObjectInfo.MaxPos.z, myDrawObjectInfo.MinPos.z))
+                return true;
+        }
+        else if (myDrawObjectInfo.TouchSide == BoxHitSide.FORWARD || myDrawObjectInfo.TouchSide == BoxHitSide.BACK)
+        {
+            if (WithinBoundaryValue(aTipPosition.x, myDrawObjectInfo.MaxPos.x, myDrawObjectInfo.MinPos.x) ||
+                    WithinBoundaryValue(aTipPosition.y, myDrawObjectInfo.MaxPos.y, myDrawObjectInfo.MinPos.y))
+                return true;
+        }
+        return false;
+    }
+
+    private bool WithinBoundaryValue(float aCurrentValue, float aMaxValue, float aMinValue)
+    {
+        if(aCurrentValue > aMaxValue || aCurrentValue < aMinValue)
+            return true;
+        return false;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="isPressed"></param>
+    private void TriggerXRGrab(bool isPressed)
+    {
+        if(isPressed && !myTriggerGrabInteraction)
+        {
+            //Debug.Log(GetComponent<XRGrabInteractable>().GetOldestInteractorSelecting().transform.name);
+            myGrabHandTransform = GetComponent<XRGrabInteractable>().GetOldestInteractorSelecting().transform;
+
+            tempEnableXRGrab = GetComponent<XRGrabInteractable>().enabled = !GetComponent<XRGrabInteractable>().enabled;
+            //Debug.Log("XR Grap enable " + (GetComponent<XRGrabInteractable>().enabled ? "On" : "Off").ToString());
+            myTriggerGrabInteraction = isPressed;
+        }
+        else if(myTriggerGrabInteraction && !isPressed)
+            myTriggerGrabInteraction = false;
+
+        if (!tempEnableXRGrab)
+        {
+            tempPosition = transform.position;
+        }
+    }
+
+    private void FreezeAxis(BoxHitSide aHitSide)
+    {
+        if (aHitSide == BoxHitSide.RIGHT || aHitSide == BoxHitSide.LEFT)
+        {
+            if (aHitSide == BoxHitSide.RIGHT)
+                this.transform.eulerAngles = new Vector3(0, 0, 90);
+            else if (aHitSide == BoxHitSide.LEFT)
+                this.transform.eulerAngles = new Vector3(0, 0, -90);
+            FreezeAxisX();
+        }
+        else if (aHitSide == BoxHitSide.TOP || aHitSide == BoxHitSide.BOTTOM)
+        {
+            if (aHitSide == BoxHitSide.TOP)
+                this.transform.eulerAngles = new Vector3(0, 0, 0);
+            else if (aHitSide == BoxHitSide.BOTTOM)
+                this.transform.eulerAngles = new Vector3(0, 0, 180);
+            FreezeAxisY();
+        }
+        else if (aHitSide == BoxHitSide.FORWARD || aHitSide == BoxHitSide.BACK)
+        {
+            if (aHitSide == BoxHitSide.FORWARD)
+                this.transform.eulerAngles = new Vector3(90, 0, 0);
+            else if (aHitSide == BoxHitSide.BACK)
+                this.transform.eulerAngles = new Vector3(-90, 0, 0);
+            FreezeAxisZ();
+        }
+        TriggerXRGrab(true);
+    }
+
+    private void FreezeAxisX()
+    {
+        myRigidbody.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX;
+    }
+
+    private void FreezeAxisY()
+    {
+        myRigidbody.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
+    }
+
+    private void FreezeAxisZ()
+    {
+        myRigidbody.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
+    }
+
+    private void UnFreezeAxis()
+    {
+        myRigidbody.constraints = RigidbodyConstraints.None;
+    }
+
+    private void PlaceDrawingPose(Vector3 aRotation, Vector3 aLocation)
+    {
+        this.transform.eulerAngles = aRotation;
+        this.transform.position = myDrawObjectInfo.TouchPoint + (aLocation * myLenghtBetweenCenterAndTip);
     }
 }

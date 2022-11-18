@@ -35,7 +35,7 @@ public class MarkingLine : MonoBehaviour
         myLine.SetPosition(0, aPos);
         myLine.SetPosition(1, aPos);
 
-        Debug.Log("Line start at " + aPos.ToString());
+        //Debug.Log("Line start at " + aPos.ToString());
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ public class MarkingLine : MonoBehaviour
     {
         myIsDrawing = !myIsDrawing;
         myLine.SetPosition(1, aStopPos);
-        Debug.Log("Line end at " + aStopPos.ToString());
+        //Debug.Log("Line end at " + aStopPos.ToString());
     }
 
     /// <summary>
