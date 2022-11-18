@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class SubstanceInfo
 {
@@ -37,6 +38,14 @@ public class SubstanceInfo
             TouchPoint = MaxPos;
         else
             TouchPoint = MinPos;
+        return this;
+    }
+
+    public SubstanceInfo SetTouchedSide(BoxHitSide aTouchSide, Vector3 aTouchingPoint)
+    {
+        TouchSide = aTouchSide;
+        TouchNormal = GetSideNormal();
+        TouchPoint = SetTouchPoint(aTouchingPoint);
         return this;
     }
 
@@ -132,6 +141,25 @@ public class SubstanceInfo
             return Vector3.back;
         return Vector3.zero;
     }
+
+    private Vector3 SetTouchPoint(Vector3 aTouchPosition)
+    {
+        if (TouchSide == BoxHitSide.RIGHT)
+            aTouchPosition.x = MaxPos.x;
+        else if (TouchSide == BoxHitSide.LEFT)
+            aTouchPosition.x = MinPos.x;
+
+        else if (TouchSide == BoxHitSide.TOP)
+            aTouchPosition.y = MaxPos.y;
+        else if (TouchSide == BoxHitSide.BOTTOM)
+            aTouchPosition.y = MinPos.y;
+
+        else if (TouchSide == BoxHitSide.FORWARD)
+            aTouchPosition.z = MaxPos.z;
+        else if (TouchSide == BoxHitSide.BACK)
+            aTouchPosition.z = MinPos.z;
+        return aTouchPosition;
+    }
 }
 
 public class Substance : MonoBehaviour
@@ -176,7 +204,11 @@ public class Substance : MonoBehaviour
             
             //other.GetComponent<Pen>().StartDrawOnTrigger(this.transform, mySubstanceInfo);
             //other.GetComponent<Pen>().StartDrawOnTrigger(this.transform, mySubstanceInfo.SetTouchedSide(CollideDetectTools.ReturnBoxHitSide(this.gameObject, other.gameObject)));
-            other.GetComponent<MarkingTool>().StartDraw(this.transform, mySubstanceInfo.SetTouchedSide(CollideDetectTools.ReturnBoxHitSide(this.gameObject, other.gameObject)));
+            other.GetComponent<MarkingTool>().StartDraw(
+                this.transform, 
+                mySubstanceInfo.SetTouchedSide(
+                    CollideDetectTools.ReturnBoxHitSide(this.gameObject, other.gameObject),
+                    other.transform.position));
         }
     }
 

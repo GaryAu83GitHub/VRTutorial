@@ -198,15 +198,15 @@ public class MarkingTool : MonoBehaviour
 
     private Vector3 GetDrawingPosition(Transform aHoldingHandTransform)
     {
-        if (myTargetData.TouchSide == BoxHitSide.RIGHT || 
+        if (myTargetData.TouchSide == BoxHitSide.RIGHT ||
             myTargetData.TouchSide == BoxHitSide.LEFT)
             return GetPositionOnAxisX(aHoldingHandTransform.position);
-        else 
-        if (myTargetData.TouchSide == BoxHitSide.TOP || 
+        else
+        if (myTargetData.TouchSide == BoxHitSide.TOP ||
             myTargetData.TouchSide == BoxHitSide.BOTTOM)
-            return GetPositionOnAxisY(aHoldingHandTransform.position);
-        else 
-        if (myTargetData.TouchSide == BoxHitSide.FORWARD || 
+            return GetPerpendicularOnAxisZ(aHoldingHandTransform.position.z);//GetPositionOnAxisY(aHoldingHandTransform.position);
+        else
+        if (myTargetData.TouchSide == BoxHitSide.FORWARD ||
             myTargetData.TouchSide == BoxHitSide.BACK)
             return GetPositionOnAxisZ(aHoldingHandTransform.position);
 
@@ -226,6 +226,21 @@ public class MarkingTool : MonoBehaviour
     private Vector3 GetPositionOnAxisZ(Vector3 aHoldingHandPosition)
     {
         return new Vector3(aHoldingHandPosition.x, aHoldingHandPosition.y, myTargetData.TouchPoint.z) + PenTipOffset();
+    }
+
+    private Vector3 GetPerpendicularOnAxisX(float aHand_X_Value)
+    {
+        return new Vector3(aHand_X_Value, myTargetData.TouchPoint.y, myTargetData.TouchPoint.z) + PenTipOffset();
+    }
+
+    private Vector3 GetPerpendicularOnAxisY(float aHand_Y_Value)
+    {
+        return new Vector3(myTargetData.TouchPoint.x, aHand_Y_Value, myTargetData.TouchPoint.z) + PenTipOffset();
+    }
+
+    private Vector3 GetPerpendicularOnAxisZ(float aHand_Z_Value)
+    {
+        return new Vector3(myTargetData.TouchPoint.x, myTargetData.TouchPoint.y, aHand_Z_Value) + PenTipOffset();
     }
 
     private Vector3 PenTipOffset()
@@ -250,23 +265,17 @@ public class MarkingTool : MonoBehaviour
     }
 
     private void FreezeAxisX(int aDir, Vector3 aSideDir)
-    {
-        //this.transform.eulerAngles = new Vector3(0, 0, aDir * 90);
+    {   
         transform.rotation = Quaternion.Euler(new Vector3(0, 0, aDir * 90));
-        //this.transform.position = myTargetData.TouchPoint + (aSideDir * myTipToCenterDist);
     }
 
     private void FreezeAxisY(int aDir, Vector3 aSideDir)
     {
-        //this.transform.eulerAngles = new Vector3(0, 0, aDir * 180);
         transform.rotation = Quaternion.Euler(new Vector3(0, 0, aDir * 180));
-        //this.transform.position = myTargetData.TouchPoint + (aSideDir * myTipToCenterDist);
     }
 
     private void FreezeAxisZ(int aDir, Vector3 aSideDir)
     {
-        //this.transform.eulerAngles = new Vector3(aDir * 90, 0, 0);
         transform.rotation = Quaternion.Euler(new Vector3(aDir * 90, 0, 0));
-        //this.transform.position = myTargetData.TouchPoint + (aSideDir * myTipToCenterDist);
     }
 }
