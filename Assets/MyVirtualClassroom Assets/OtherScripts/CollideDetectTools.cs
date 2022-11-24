@@ -12,7 +12,7 @@ public class CollideDetectTools
     /// <param name="anObj1"></param>
     /// <param name="anObj2"></param>
     /// <returns></returns>
-    public static BoxHitSide ReturnBoxHitSide(GameObject anObj1, GameObject anObj2)
+    public static BoxHitSide GetHitSide(GameObject anObj1, GameObject anObj2)
     {
         //BoxHitSide hitSide = BoxHitSide.NONE;
 

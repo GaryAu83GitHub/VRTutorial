@@ -9,7 +9,7 @@ public class PenTip : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         //if (other.name == "Plank")
-        //    Debug.Log("Trigger with " + other.name + "at " + CollideDetectTools.ReturnBoxHitSide(other.gameObject, this.gameObject));
+        //    Debug.Log("Trigger with " + other.name + "at " + CollideDetectTools.GetHitSide(other.gameObject, this.gameObject));
         //IsTipTouching = true;
     }
 

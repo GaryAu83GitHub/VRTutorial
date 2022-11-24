@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -167,11 +168,6 @@ public class Substance : MonoBehaviour
     private Sliceable Sliceable;
     private MeshRenderer MeshRenderer;
 
-    // Start is called before the first frame update
-
-    //private Vector3 myMaxPosition = Vector3.zero;
-    //private Vector3 myMinPosition = Vector3.zero;
-
     internal BoxHitSide HitSide = BoxHitSide.NONE;
 
     private SubstanceInfo mySubstanceInfo;
@@ -184,8 +180,6 @@ public class Substance : MonoBehaviour
         mySubstanceInfo = new SubstanceInfo(
             GetComponent<BoxCollider>().bounds.max,
             GetComponent<BoxCollider>().bounds.min);
-        //mySubstanceInfo.MaxPos = GetComponent<BoxCollider>().bounds.max;
-        //mySubstanceInfo.MinPos = GetComponent<BoxCollider>().bounds.min;
     }
 
     // Update is called once per frame
@@ -198,27 +192,11 @@ public class Substance : MonoBehaviour
     {
         if (other.tag == "Drawing")
         {
-            //Vector3 touchPoint = GetTouchMinMaxPosition(CollideDetectTools.ReturnBoxHitSide(this.gameObject, other.gameObject));
-            //other.GetComponent<Pen>().StartDrawOnTrigger(this.transform, touchPoint, mySubstanceInfo.TouchSide);
-            //GetBoundaryPoint(CollideDetectTools.ReturnBoxHitSide(this.gameObject, other.gameObject));
-            
-            //other.GetComponent<Pen>().StartDrawOnTrigger(this.transform, mySubstanceInfo);
-            //other.GetComponent<Pen>().StartDrawOnTrigger(this.transform, mySubstanceInfo.SetTouchedSide(CollideDetectTools.ReturnBoxHitSide(this.gameObject, other.gameObject)));
             other.GetComponent<MarkingTool>().StartDraw(
                 this.transform, 
                 mySubstanceInfo.SetTouchedSide(
-                    CollideDetectTools.ReturnBoxHitSide(this.gameObject, other.gameObject),
+                    CollideDetectTools.GetHitSide(this.gameObject, other.gameObject),
                     other.transform.position));
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.tag == "Drawing")
-        {
-            //other.GetComponent<Pen>().StopDrawOnTrigger(mySubstanceInfo.MaxPos, mySubstanceInfo.MinPos);
-            //other.GetComponent<Pen>().StopDrawOnTrigger();
-            //other.GetComponent<MarkingTool>().StopDraw();
         }
     }
 

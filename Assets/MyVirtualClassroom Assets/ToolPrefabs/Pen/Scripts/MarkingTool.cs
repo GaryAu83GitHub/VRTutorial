@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
+public enum UsingHand { LEFT_HAND, RIGHT_HAND, NONE };
+
 public class MarkingTool : MonoBehaviour
 {
     // *** Hand funciton class
@@ -13,7 +15,7 @@ public class MarkingTool : MonoBehaviour
     [SerializeField]
     private InputActionProperty LeftGrabInput, RightGrabInput;
 
-    protected enum UsingHand { LEFT_HAND, RIGHT_HAND, NONE };
+    
 
     protected UsingHand myHoldingHand = UsingHand.NONE;
     protected UsingHand myTouchingHand = UsingHand.NONE;
@@ -31,8 +33,6 @@ public class MarkingTool : MonoBehaviour
     [SerializeField]
     private GameObject MarkingPrefab;
 
-    private Rigidbody myRB;
-
     private Vector3 myHangingPosition;
     // **************************
 
@@ -46,9 +46,13 @@ public class MarkingTool : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //myRB = GetComponent<Rigidbody>();
         myHangingPosition = transform.position;
         myTipToCenterDist = (transform.position - DrawingTip.position).magnitude;
+    }
+
+    private void OnDestroy()
+    {
+        
     }
 
     // Update is called once per frame
@@ -100,6 +104,7 @@ public class MarkingTool : MonoBehaviour
 
     public void StartDraw(Transform aDrawingObject, SubstanceInfo anInfo)
     {
+        Debug.Log(anInfo.TouchSide + " : " + transform.rotation.z.ToString());
         if (myIsDrawing)
             return;
 
@@ -211,6 +216,11 @@ public class MarkingTool : MonoBehaviour
             return GetPositionOnAxisZ(aHoldingHandTransform.position);
 
         return aHoldingHandTransform.position;
+    }
+
+    private bool IsHandOnRightSide(Vector3 aHoldingHandTransform)
+    {
+        return true;
     }
 
     private Vector3 GetPositionOnAxisX(Vector3 aHoldingHandPosition)
