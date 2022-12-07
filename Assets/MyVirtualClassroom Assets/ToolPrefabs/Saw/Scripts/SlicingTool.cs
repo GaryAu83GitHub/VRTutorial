@@ -142,7 +142,6 @@ public class SlicingTool : MonoBehaviour
 
             //OnHitSubstance?.Invoke(mySubstanceEntPos, (mySubstanceEntPos + (-transform.up * hypLenght)), transform.forward);
 
-            //transform.position = new Vector3(GetGrabHandPos().x, substanceSufaceTop, GetGrabHandPos().z) + (transform.up * myCenterEdgeDistance);
             transform.position = mySubstanceEntPos + (transform.up * myCenterEdgeDistance);
             mySubstanceExitPos = mySubstanceEntPos + (-transform.up * hypLenght);
         }
