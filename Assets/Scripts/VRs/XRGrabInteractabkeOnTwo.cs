@@ -46,4 +46,14 @@ public class XRGrabInteractabkeOnTwo : XRGrabInteractable
 
         base.OnSelectExited(args);
     }
+
+    public void GetAttachTransform(Transform aLeftAttach, Transform aRightAttach)
+    {
+        LeftAttachTransform = aLeftAttach;
+        RightAttachTransform = aRightAttach;
+
+
+        interactionLayers = InteractionLayerMask.GetMask("DirectInteraction");
+        movementType = MovementType.Kinematic;
+    }
 }

@@ -26,10 +26,14 @@ namespace Assets.MyVirtualClassroom_Assets.ToolPrefabs.Saw.Scripts
             SlicesMetadata slicesMeta = new SlicesMetadata(aSlicingPlane, mesh, sliceable.IsSolid, sliceable.ReverseWindTriangles, sliceable.ShareVerticies, sliceable.SmoothVerticices);
 
             GameObject positiveObject = CreateMeshGameObject(anObjectToSlice);
-            positiveObject.name = String.Format("{0}_positive", anObjectToSlice.name);
+            positiveObject.name = "Plank_" + (SlicerSupportTools.SLICED_PART_COUNT);
+            //positiveObject.name = String.Format("{0}_positive", anObjectToSlice.name);
 
             GameObject negativeObject = CreateMeshGameObject(anObjectToSlice);
-            negativeObject.name = String.Format("{0}_negative", anObjectToSlice.name);
+            negativeObject.name = "Plank_" + (SlicerSupportTools.SLICED_PART_COUNT + 1);
+            //negativeObject.name = String.Format("{0}_negative", anObjectToSlice.name);
+
+            SlicerSupportTools.SLICED_PART_COUNT += 2;
 
             var positiveSideMeshData = slicesMeta.PositiveSideMesh;
             var negativeSideMeshData = slicesMeta.NegativeSideMesh;
