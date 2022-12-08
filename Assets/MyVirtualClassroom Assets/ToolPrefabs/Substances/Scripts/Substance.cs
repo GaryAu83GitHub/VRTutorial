@@ -1,46 +1,79 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
-
+using UnityEngine.XR.Interaction.Toolkit;
 
 public class Substance : MonoBehaviour
 {
-    private Sliceable Sliceable;
-    private MeshRenderer MeshRenderer;
+    public Color HandTouchColor = new(96, 203, 21, 255), SlicerTouchColor = new(203, 21, 40, 255);
+    public Color SubstanceTouchColor, RightAngleTouchColor;
+
+    [SerializeField, HideInInspector] private Sliceable Sliceable;
+    [SerializeField, HideInInspector] private MeshRenderer MeshRenderer;
+    [SerializeField, HideInInspector] private Rigidbody myRB;
+    [SerializeField, HideInInspector] private XRGrabInteractable XRGrab;
 
     internal BoxHitSide HitSide = BoxHitSide.NONE;
 
-    private SubstanceInfo mySubstanceInfo;
+    [SerializeField, HideInInspector] public int JumpDir = 0;
+
+    [SerializeField, HideInInspector] private SubstanceInfo mySubstanceInfo;
+
+    [SerializeField, HideInInspector] private Outline myOutline;
+
+    private bool mySlicerOnTouch = false;
+
+    private enum TouchMode { HAND, SLICER, SUBSTANCE, RIGHTANGLED, NONE }
 
     private void Awake()
     {
         SlicingTool.OnSlicedThrough += OnSlicedThrough;
         SlicingTool.OnCutThrough += OnCutThrough;
+        SlicingTool.OnSlicerTouching += OnSlicerTouching;
     }
 
     private void OnDestroy()
     {
         SlicingTool.OnSlicedThrough -= OnSlicedThrough;
         SlicingTool.OnCutThrough -= OnCutThrough;
+        SlicingTool.OnSlicerTouching -= OnSlicerTouching;
     }
 
     void Start()
     {
-        if (gameObject.tag != "Sliceable")
+        if (!gameObject.CompareTag("Sliceable"))
             gameObject.tag = "Sliceable";
 
         Sliceable = GetComponent<Sliceable>();
         MeshRenderer = GetComponent<MeshRenderer>();
+        myRB = GetComponent<Rigidbody>();
+        XRGrab = GetComponent<XRGrabInteractable>();
 
-        if(GetComponent<BoxCollider>() == null)
+        if (GetComponent<BoxCollider>() == null)
             transform.AddComponent<BoxCollider>();
+
+        if (GetComponent<Outline>() != null)
+            myOutline = GetComponent<Outline>();
+        else if (GetComponentInChildren<Outline>() != null)
+            myOutline = GetComponentInChildren<Outline>();
+        else
+            myOutline = transform.AddComponent<Outline>();
+
+        WhenSliced();
+
+        myOutline.OutlineWidth = 10;
+
+        DrawOutline(TouchMode.NONE);
 
         mySubstanceInfo = new SubstanceInfo(
             GetComponent<BoxCollider>().bounds.max,
             GetComponent<BoxCollider>().bounds.min);
+
+        mySlicerOnTouch = false;
     }
 
     // Update is called once per frame
@@ -49,15 +82,18 @@ public class Substance : MonoBehaviour
         
     }
 
-    public void WhenSliced(int aSideStepDir)
+    public void WhenSliced()
     {
-        transform.AddComponent<Rigidbody>();
-        GetComponent<Rigidbody>().AddForce(aSideStepDir * transform.right * 1, ForceMode.Impulse);
+        myRB.AddForce(1 * JumpDir * transform.right, ForceMode.Impulse);
+        XRGrab.enabled = true;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Drawing")
+        if(mySlicerOnTouch)
+            return;
+
+        if (other.CompareTag("Drawing"))
         {
             other.GetComponent<MarkingTool>().StartDraw(
                 this.transform, 
@@ -65,6 +101,22 @@ public class Substance : MonoBehaviour
                     CollideDetectTools.GetHitSide(this.gameObject, other.gameObject),
                     other.transform.position));
         }
+
+        if(other.CompareTag("LeftHandTag") || other.CompareTag("RightHandTag"))
+        {
+            DrawOutline(TouchMode.HAND);
+        }
+
+        if(other.CompareTag("Sliceable"))
+            DrawOutline(TouchMode.SUBSTANCE);
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        //if (other.CompareTag("LeftHandTag") || other.CompareTag("RightHandTag"))
+        //{
+            DrawOutline(TouchMode.NONE);
+        //}
     }
 
     private Vector3 GetTouchMinMaxPosition(BoxHitSide aTouchSide)
@@ -101,8 +153,47 @@ public class Substance : MonoBehaviour
         SlicerSupportTools.CutObject(this.transform, aSlicingTool);
     }
 
+    private void OnSlicerTouching(string aTouchedSubstanceName)
+    {
+        if(aTouchedSubstanceName != transform.name)
+            return;
+        XRGrab.enabled = false;
+        DrawOutline(TouchMode.SLICER);
+        mySlicerOnTouch = true;
+    }
+
     private Vector3 Vector3Abs(Vector3 v1, Vector3 v2)
     {
         return new Vector3(Mathf.Abs(v2.x - v1.x), Mathf.Abs(v2.y - v1.y), Mathf.Abs(v2.y - v1.y));
+    }
+
+    private void DrawOutline(TouchMode touchMode)
+    {
+        if (touchMode == TouchMode.NONE)
+        {
+            myOutline.enabled = false;
+            return;
+        }
+
+        myOutline.enabled = true;
+        switch(touchMode)
+        {
+            case TouchMode.HAND:
+                myOutline.OutlineMode = Outline.Mode.OutlineVisible; 
+                myOutline.OutlineColor = HandTouchColor;
+                break;
+            case TouchMode.SLICER:
+                myOutline.OutlineMode = Outline.Mode.OutlineVisible;
+                myOutline.OutlineColor = SlicerTouchColor;
+                break;
+            case TouchMode.SUBSTANCE:
+                myOutline.OutlineMode = Outline.Mode.OutlineAndSilhouette;
+                myOutline.OutlineColor = SubstanceTouchColor;
+                break;
+            case TouchMode.RIGHTANGLED:
+                myOutline.OutlineMode = Outline.Mode.OutlineAndSilhouette;
+                myOutline.OutlineColor = RightAngleTouchColor;
+                break;
+        }
     }
 }

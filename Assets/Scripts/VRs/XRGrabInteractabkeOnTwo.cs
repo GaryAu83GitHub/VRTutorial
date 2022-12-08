@@ -11,11 +11,11 @@ public class XRGrabInteractabkeOnTwo : XRGrabInteractable
     public bool IsRightHandGraping { get; private set; }
     public bool IsLeftHandGraping { get; private set; }
 
-    public delegate void OnGrabbingToolWithHand(UsingHand grabbingHandIndex);
-    public static OnGrabbingToolWithHand grabbingWithHand;
+    public delegate void GrabbingToolWithHand(UsingHand grabbingHandIndex);
+    public static GrabbingToolWithHand OnGrabbingWithHand;
 
-    public delegate void OnDroppingTool();
-    public static OnDroppingTool droppingTool;
+    public delegate void DroppingTool();
+    public static DroppingTool OnDroppingTool;
 
 
     protected override void OnSelectEntered(SelectEnterEventArgs args)
@@ -24,13 +24,13 @@ public class XRGrabInteractabkeOnTwo : XRGrabInteractable
         {
             attachTransform = LeftAttachTransform;
             IsLeftHandGraping = true;
-            grabbingWithHand?.Invoke(UsingHand.LEFT_HAND);
+            OnGrabbingWithHand?.Invoke(UsingHand.LEFT_HAND);
         }
         else if (args.interactorObject.transform.CompareTag("RightHandTag"))
         {
             attachTransform = RightAttachTransform;
             IsRightHandGraping = true;
-            grabbingWithHand?.Invoke(UsingHand.RIGHT_HAND);
+            OnGrabbingWithHand?.Invoke(UsingHand.RIGHT_HAND);
         }
         base.OnSelectEntered(args);
     }
@@ -42,7 +42,7 @@ public class XRGrabInteractabkeOnTwo : XRGrabInteractable
         else if (IsRightHandGraping && args.interactorObject.transform.CompareTag("RightHandTag"))
             IsRightHandGraping = false;
 
-        droppingTool?.Invoke();
+        OnDroppingTool?.Invoke();
 
         base.OnSelectExited(args);
     }

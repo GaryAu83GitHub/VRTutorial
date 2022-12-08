@@ -82,35 +82,49 @@ public class SlicerSupportTools : MonoBehaviour
             return;
 
         Vector3 rightPoint = substance.position + Vector3.right * substanceScale.x * .5f;
+        float rightWidth = Vector3.Distance(hitPos, rightPoint);
         Vector3 leftPoint = substance.position - Vector3.right * substanceScale.x * .5f;
-        Material mat = substance.GetComponent<MeshRenderer>().material;
-        Destroy(substance.gameObject);
+        float leftWidth = Vector3.Distance(hitPos, leftPoint);
 
-        GameObject rightObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        Material mat = substance.GetComponent<MeshRenderer>().material;
+        
+        GameObject rightObj = Instantiate(substance.gameObject);
         rightObj.transform.name = "SlicedPart_" + (SlicerSupportTools.SLICED_PART_COUNT);
         rightObj.transform.position = (rightPoint + hitPos) * .5f;
-        float rightWidth = Vector3.Distance(hitPos, rightPoint);
         rightObj.transform.localScale = new Vector3(rightWidth, substanceScale.y, substanceScale.z);
-        if(rightObj.GetComponent<MeshRenderer>() == null)
-            rightObj.AddComponent<MeshRenderer>().material = mat;
-        else
-            rightObj.GetComponent<MeshRenderer>().material = mat;
-        rightObj.AddComponent<Substance>();
-        rightObj.GetComponent<Substance>().WhenSliced(1);
-        //rightObj.AddComponent<Rigidbody>();
+        rightObj.GetComponent<Substance>().JumpDir = 1;
 
-        GameObject leftObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject leftObj = Instantiate(substance.gameObject);
         leftObj.transform.name = "SlicedPart_" + (SlicerSupportTools.SLICED_PART_COUNT + 1);
         leftObj.transform.position = (leftPoint + hitPos) * .5f;
-        float leftWidth = Vector3.Distance(hitPos, leftPoint);
         leftObj.transform.localScale = new Vector3(leftWidth, substanceScale.y, substanceScale.z);
-        if (leftObj.GetComponent<MeshRenderer>() == null)
-            leftObj.AddComponent<MeshRenderer>().material = mat;
-        else
-            leftObj.GetComponent<MeshRenderer>().material = mat;
-        leftObj.AddComponent<Substance>();
-        leftObj.GetComponent<Substance>().WhenSliced(-1);
-        //leftObj.AddComponent<Rigidbody>();
+        leftObj.GetComponent<Substance>().JumpDir = -1;
+
+        Destroy(substance.gameObject);
+
+        //GameObject rightObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        //rightObj.transform.name = "SlicedPart_" + (SlicerSupportTools.SLICED_PART_COUNT);
+        //rightObj.transform.position = (rightPoint + hitPos) * .5f;
+        //rightObj.transform.localScale = new Vector3(rightWidth, substanceScale.y, substanceScale.z);
+        //if(rightObj.GetComponent<MeshRenderer>() == null)
+        //    rightObj.AddComponent<MeshRenderer>().material = mat;
+        //else
+        //    rightObj.GetComponent<MeshRenderer>().material = mat;
+        //rightObj.AddComponent<Substance>();
+        //rightObj.GetComponent<Substance>().WhenSliced(1);
+        ////rightObj.AddComponent<myRB>();
+
+        //GameObject leftObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        //leftObj.transform.name = "SlicedPart_" + (SlicerSupportTools.SLICED_PART_COUNT + 1);
+        //leftObj.transform.position = (leftPoint + hitPos) * .5f;
+        //leftObj.transform.localScale = new Vector3(leftWidth, substanceScale.y, substanceScale.z);
+        //if (leftObj.GetComponent<MeshRenderer>() == null)
+        //    leftObj.AddComponent<MeshRenderer>().material = mat;
+        //else
+        //    leftObj.GetComponent<MeshRenderer>().material = mat;
+        //leftObj.AddComponent<Substance>();
+        //leftObj.GetComponent<Substance>().WhenSliced(-1);
+        ////leftObj.AddComponent<myRB>();
 
         SlicerSupportTools.SLICED_PART_COUNT += 2;
     }

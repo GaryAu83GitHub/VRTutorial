@@ -5,7 +5,7 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static SlicingTool;
+using UnityEngine.UI;
 
 public class SlicingTool : MonoBehaviour
 {
@@ -13,6 +13,8 @@ public class SlicingTool : MonoBehaviour
     public static SlicedThrough OnSlicedThrough;
     public delegate void CutThrough(Transform thisTransform);
     public static CutThrough OnCutThrough;
+    public delegate void SlicerTouching(string aTouchedSubstanceName);
+    public static SlicerTouching OnSlicerTouching;
 
 
     public delegate void HitSubstance(Vector3 aContactPoint, Vector3 aExitPoint, Vector3 aForwardVector);
@@ -29,6 +31,7 @@ public class SlicingTool : MonoBehaviour
 
     protected bool ourIsLeftHandHolding;
     protected bool ourIsRightHandHolding;
+    protected bool ourToolIsHolded = false;
 
     private bool myIsTouchingSubstance = false;
 
@@ -45,22 +48,33 @@ public class SlicingTool : MonoBehaviour
 
     private float myCenterEdgeDistance = 0f;
 
+    private enum TouchMode { HAND, SUBSTANCE, NONE }
+    private Outline myOutline;
+
     private void Awake()
     {
-        XRGrabInteractabkeOnTwo.grabbingWithHand += GrabbingSlicer;
-        XRGrabInteractabkeOnTwo.droppingTool += DropSlicer;
+        XRGrabInteractabkeOnTwo.OnGrabbingWithHand += GrabbingSlicer;
+        XRGrabInteractabkeOnTwo.OnDroppingTool += DropSlicer;
     }
     // Start is called before the first frame update
     void Start()
     {
         myCenterEdgeDistance = (transform.position.y - GetComponent<BoxCollider>().bounds.min.y);
         myHangingPos = transform.position;
+
+        if(GetComponent<Outline>() != null)
+            myOutline = GetComponent<Outline>();
+        else if (GetComponentInChildren<Outline>() != null)
+        {
+            myOutline = GetComponentInChildren<Outline>();
+        }
+        DrawOutline(TouchMode.NONE);
     }
 
     private void OnDestroy()
     {
-        XRGrabInteractabkeOnTwo.grabbingWithHand -= GrabbingSlicer;
-        XRGrabInteractabkeOnTwo.droppingTool -= DropSlicer;
+        XRGrabInteractabkeOnTwo.OnGrabbingWithHand -= GrabbingSlicer;
+        XRGrabInteractabkeOnTwo.OnDroppingTool -= DropSlicer;
     }
 
     // Update is called once per frame
@@ -76,7 +90,6 @@ public class SlicingTool : MonoBehaviour
                 myIsTouchingSubstance = false;
                 //OnSlicedThrough?.Invoke(this.transform, myFrontExit, myFrontEnter, myBackEnter);
                 OnCutThrough?.Invoke(transform);
-                
                 HangBack();
 
             }
@@ -120,7 +133,6 @@ public class SlicingTool : MonoBehaviour
     {
         if(other.CompareTag("Sliceable") && GetComponent<XRGrabInteractabkeOnTwo>() != null)
         {
-            //Debug.Log("The slice is touching " + other.transform.name);
             myIsTouchingSubstance = true;
 
             Destroy(GetComponent<XRGrabInteractabkeOnTwo>());
@@ -144,6 +156,24 @@ public class SlicingTool : MonoBehaviour
 
             transform.position = mySubstanceEntPos + (transform.up * myCenterEdgeDistance);
             mySubstanceExitPos = mySubstanceEntPos + (-transform.up * hypLenght);
+
+            OnSlicerTouching?.Invoke(other.name);
+
+            DrawOutline(TouchMode.SUBSTANCE);
+        }
+
+        if((other.CompareTag("LeftHandTag") || other.CompareTag("RightHandTag")))
+        {
+            if(!ourToolIsHolded)
+                DrawOutline(TouchMode.HAND);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("LeftHandTag") || other.CompareTag("RightHandTag"))
+        {
+            DrawOutline(TouchMode.NONE);
         }
     }
 
@@ -162,19 +192,21 @@ public class SlicingTool : MonoBehaviour
     {
         if (aGrabbingHand == UsingHand.LEFT_HAND)
         {
-            ourIsLeftHandHolding = true;
+            ourToolIsHolded = ourIsLeftHandHolding = true;
         }
         else if (aGrabbingHand == UsingHand.RIGHT_HAND)
-        { 
-            ourIsRightHandHolding = true;
+        {
+            ourToolIsHolded = ourIsRightHandHolding = true;
         }
+
+        DrawOutline(0);
     }
 
     private void DropSlicer()
     {
         if (myIsTouchingSubstance)
             return;
-        ourIsRightHandHolding = ourIsLeftHandHolding = false;
+        ourToolIsHolded = ourIsRightHandHolding = ourIsLeftHandHolding = false;
     }
 
     private bool HadSlicedThroughSubstance()
@@ -188,9 +220,29 @@ public class SlicingTool : MonoBehaviour
         transform.position = myHangingPos;
         transform.eulerAngles = new Vector3(0,90,0);
 
-        ourIsLeftHandHolding = ourIsRightHandHolding = false;
+        ourToolIsHolded = ourIsLeftHandHolding = ourIsRightHandHolding = false;
 
         transform.AddComponent<Rigidbody>().useGravity = false;
         transform.AddComponent<XRGrabInteractabkeOnTwo>().GetAttachTransform(LeftAttach, RightAttach);
+
+        DrawOutline(TouchMode.NONE);
+    }
+
+    private void DrawOutline(TouchMode aMode)
+    {
+        if (aMode == TouchMode.NONE)
+        {
+            myOutline.enabled = false;
+            return;
+        }
+
+        myOutline.enabled = true;
+        switch (aMode)
+        {
+            case TouchMode.HAND:
+                myOutline.OutlineMode = Outline.Mode.OutlineVisible; break;
+            case TouchMode.SUBSTANCE:
+                myOutline.OutlineMode = Outline.Mode.SilhouetteOnly; break;
+        }
     }
 }

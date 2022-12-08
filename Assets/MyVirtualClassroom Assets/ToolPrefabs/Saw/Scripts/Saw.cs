@@ -36,7 +36,7 @@ public class Saw : MonoBehaviour
         if (!other.transform.CompareTag("Sliceable"))
             return;
 
-        //transform.parent.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezePositionX;
+        //transform.parent.GetComponent<myRB>().constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezePositionX;
         other.gameObject.GetComponent<Rigidbody>().isKinematic = true;
         myBladeTouchObject = true;
         myStopHeigh = transform.parent.transform.localPosition.y;
