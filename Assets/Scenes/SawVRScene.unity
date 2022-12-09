@@ -2816,6 +2816,32 @@ MonoBehaviour:
       m_Flags: 0
     m_Reference: {fileID: 187161793506945269, guid: c348712bda248c246b8c49b3db54643f,
       type: 3}
+  LeftActiveSlice:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Left Active Slice
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: aea86529-1516-4862-97b0-16da49239ee8
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: -5982496924579745919, guid: c348712bda248c246b8c49b3db54643f,
+      type: 3}
+  RightActiveSlice:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Right Active Slice
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: 90847dbe-e84e-4470-83b0-28ac187a7e58
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
+      type: 3}
 --- !u!114 &1906928786
 MonoBehaviour:
   m_ObjectHideFlags: 0
