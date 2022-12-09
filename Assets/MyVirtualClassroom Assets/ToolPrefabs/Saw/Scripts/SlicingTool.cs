@@ -27,13 +27,14 @@ public class SlicingTool : MonoBehaviour
     private Transform LeftAttach, RightAttach;
 
     [SerializeField]
-    private InputActionProperty LeftGrab, RightGrab;
+    private InputActionProperty LeftGrab, RightGrab, LeftActiveSlice, RightActiveSlice;
 
     protected bool ourIsLeftHandHolding;
     protected bool ourIsRightHandHolding;
     protected bool ourToolIsHolded = false;
 
     private bool myIsTouchingSubstance = false;
+    private bool myIsCutting = false;
 
     private Vector3 myHangingPos = Vector3.zero;
 
@@ -80,16 +81,17 @@ public class SlicingTool : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(myIsTouchingSubstance)
+        if(myIsCutting/*myIsTouchingSubstance*/)
         {
             transform.position += (transform.forward * myForwardVelocity) * Time.deltaTime;
             transform.position += -transform.up * (myDotProduct > 0 ? 1 : 0) * PosDifference().magnitude * Time.deltaTime;
             
             if (HadSlicedThroughSubstance())
             {
-                myIsTouchingSubstance = false;
+                /*myIsTouchingSubstance*/myIsCutting = false;
                 //OnSlicedThrough?.Invoke(this.transform, myFrontExit, myFrontEnter, myBackEnter);
                 OnCutThrough?.Invoke(transform);
+                //GetComponent<Rigidbody>().isKinematic = false;
                 HangBack();
 
             }
@@ -98,7 +100,7 @@ public class SlicingTool : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (myIsTouchingSubstance)
+        if (myIsCutting/*myIsTouchingSubstance*/)
         {
             myDotProduct = DotProductForAxis(transform.forward);
             myForwardVelocity = (PosDifference().magnitude / Time.deltaTime) * myDotProduct;
@@ -131,35 +133,39 @@ public class SlicingTool : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.CompareTag("Sliceable") && GetComponent<XRGrabInteractabkeOnTwo>() != null)
+        if(other.CompareTag("Sliceable") && !myIsCutting/*!myIsTouchingSubstanceGetComponent<XRGrabInteractabkeOnTwo>() != null*/)
         {
-            myIsTouchingSubstance = true;
+            //myIsTouchingSubstance = true;
 
-            Destroy(GetComponent<XRGrabInteractabkeOnTwo>());
-            Destroy(GetComponent<Rigidbody>());
+            //Destroy(GetComponent<XRGrabInteractabkeOnTwo>());
+            //Destroy(GetComponent<Rigidbody>());
 
-            Vector3 max = other.transform.GetComponent<BoxCollider>().bounds.max;
-            Vector3 min = other.transform.GetComponent<BoxCollider>().bounds.min;
-            float substanceHeight = max.y - min.y;
+            ////GetComponent<Rigidbody>().isKinematic = true;
 
-            Vector3 contactPoint = mySubstanceEntPos = other.GetComponent<BoxCollider>().bounds.ClosestPoint(transform.position);
-            transform.rotation = Quaternion.Euler(Vector3.zero);
-            
-            float degreeAngle = Vector3.Angle(transform.up, other.transform.up);
-            float hypLenght = substanceHeight / math.cos((degreeAngle * (math.PI/180f)));
+            //Vector3 max = other.transform.GetComponent<BoxCollider>().bounds.max;
+            //Vector3 min = other.transform.GetComponent<BoxCollider>().bounds.min;
+            //float substanceHeight = max.y - min.y;
 
-            myFrontEnter = mySubstanceEntPos + transform.forward * 2;
-            myFrontExit = myFrontEnter + (-transform.up * (hypLenght * 2));
-            myBackEnter = mySubstanceEntPos - transform.forward * 2;
+            //mySubstanceEntPos = other.GetComponent<BoxCollider>().bounds.ClosestPoint(transform.position);
+            //transform.rotation = Quaternion.Euler(Vector3.zero);
 
-            //OnHitSubstance?.Invoke(mySubstanceEntPos, (mySubstanceEntPos + (-transform.up * hypLenght)), transform.forward);
+            //float degreeAngle = Vector3.Angle(transform.up, other.transform.up);
+            //float hypLenght = substanceHeight / math.cos((degreeAngle * (math.PI/180f)));
 
-            transform.position = mySubstanceEntPos + (transform.up * myCenterEdgeDistance);
-            mySubstanceExitPos = mySubstanceEntPos + (-transform.up * hypLenght);
+            //myFrontEnter = mySubstanceEntPos + transform.forward * 2;
+            //myFrontExit = myFrontEnter + (-transform.up * (hypLenght * 2));
+            //myBackEnter = mySubstanceEntPos - transform.forward * 2;
 
+            //transform.position = mySubstanceEntPos + (transform.up * myCenterEdgeDistance);
+            //mySubstanceExitPos = mySubstanceEntPos + (-transform.up * hypLenght);
+
+            ////OnHitSubstance?.Invoke(mySubstanceEntPos, (mySubstanceEntPos + (-transform.up * hypLenght)), transform.forward);
             OnSlicerTouching?.Invoke(other.name);
+            //DrawOutline(TouchMode.SUBSTANCE);
 
-            DrawOutline(TouchMode.SUBSTANCE);
+            if(ActiveCutting())
+                SetCuttingPos(other.transform);
+
         }
 
         if((other.CompareTag("LeftHandTag") || other.CompareTag("RightHandTag")))
@@ -167,6 +173,36 @@ public class SlicingTool : MonoBehaviour
             if(!ourToolIsHolded)
                 DrawOutline(TouchMode.HAND);
         }
+    }
+
+    private void SetCuttingPos(Transform aTransform)
+    {
+        /*myIsTouchingSubstance*/myIsCutting = true;
+
+        Destroy(GetComponent<XRGrabInteractabkeOnTwo>());
+        Destroy(GetComponent<Rigidbody>());
+
+        //GetComponent<Rigidbody>().isKinematic = true;
+
+        Vector3 max = aTransform.GetComponent<BoxCollider>().bounds.max;
+        Vector3 min = aTransform.GetComponent<BoxCollider>().bounds.min;
+        float substanceHeight = max.y - min.y;
+
+        mySubstanceEntPos = aTransform.GetComponent<BoxCollider>().bounds.ClosestPoint(transform.position);
+        transform.rotation = Quaternion.Euler(Vector3.zero);
+
+        float degreeAngle = Vector3.Angle(transform.up, aTransform.up);
+        float hypLenght = substanceHeight / math.cos((degreeAngle * (math.PI / 180f)));
+
+        myFrontEnter = mySubstanceEntPos + transform.forward * 2;
+        myFrontExit = myFrontEnter + (-transform.up * (hypLenght * 2));
+        myBackEnter = mySubstanceEntPos - transform.forward * 2;
+
+        transform.position = mySubstanceEntPos + (transform.up * myCenterEdgeDistance);
+        mySubstanceExitPos = mySubstanceEntPos + (-transform.up * hypLenght);
+
+        //OnHitSubstance?.Invoke(mySubstanceEntPos, (mySubstanceEntPos + (-transform.up * hypLenght)), transform.forward);
+        //OnSlicerTouching?.Invoke(aTransform.name);
     }
 
     private void OnTriggerExit(Collider other)
@@ -202,9 +238,18 @@ public class SlicingTool : MonoBehaviour
         DrawOutline(0);
     }
 
+    private bool ActiveCutting()
+    {
+        if (ourIsLeftHandHolding)
+            return LeftActiveSlice.action.IsPressed();
+        if(ourIsRightHandHolding)
+            return RightActiveSlice.action.IsPressed();
+        return false;
+    }
+
     private void DropSlicer()
     {
-        if (myIsTouchingSubstance)
+        if (myIsCutting/*myIsTouchingSubstance*/)
             return;
         ourToolIsHolded = ourIsRightHandHolding = ourIsLeftHandHolding = false;
     }
@@ -221,6 +266,7 @@ public class SlicingTool : MonoBehaviour
         transform.eulerAngles = new Vector3(0,90,0);
 
         ourToolIsHolded = ourIsLeftHandHolding = ourIsRightHandHolding = false;
+
 
         transform.AddComponent<Rigidbody>().useGravity = false;
         transform.AddComponent<XRGrabInteractabkeOnTwo>().GetAttachTransform(LeftAttach, RightAttach);

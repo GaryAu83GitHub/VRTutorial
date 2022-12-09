@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -109,14 +108,16 @@ public class Substance : MonoBehaviour
 
         if(other.CompareTag("Sliceable"))
             DrawOutline(TouchMode.SUBSTANCE);
+
+        if(other.CompareTag("Slicer"))
+            DrawOutline(TouchMode.SLICER);
+
+        Debug.Log(other.tag);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        //if (other.CompareTag("LeftHandTag") || other.CompareTag("RightHandTag"))
-        //{
-            DrawOutline(TouchMode.NONE);
-        //}
+        DrawOutline(TouchMode.NONE);
     }
 
     private Vector3 GetTouchMinMaxPosition(BoxHitSide aTouchSide)
@@ -158,7 +159,7 @@ public class Substance : MonoBehaviour
         if(aTouchedSubstanceName != transform.name)
             return;
         XRGrab.enabled = false;
-        DrawOutline(TouchMode.SLICER);
+        //DrawOutline(TouchMode.SLICER);
         mySlicerOnTouch = true;
     }
 
