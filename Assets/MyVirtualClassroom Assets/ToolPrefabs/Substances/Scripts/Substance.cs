@@ -87,6 +87,11 @@ public class Substance : MonoBehaviour
         XRGrab.enabled = true;
     }
 
+    private void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log(collision.gameObject.tag);
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if(mySlicerOnTouch)
@@ -111,8 +116,6 @@ public class Substance : MonoBehaviour
 
         if(other.CompareTag("Slicer"))
             DrawOutline(TouchMode.SLICER);
-
-        Debug.Log(other.tag);
     }
 
     private void OnTriggerExit(Collider other)
@@ -159,7 +162,7 @@ public class Substance : MonoBehaviour
         if(aTouchedSubstanceName != transform.name)
             return;
         XRGrab.enabled = false;
-        //DrawOutline(TouchMode.SLICER);
+        DrawOutline(TouchMode.SLICER);
         mySlicerOnTouch = true;
     }
 

@@ -20,6 +20,8 @@ public class SlicingTool : MonoBehaviour
     public delegate void HitSubstance(Vector3 aContactPoint, Vector3 aExitPoint, Vector3 aForwardVector);
     public static HitSubstance OnHitSubstance;
 
+    public Color HandTouchColor = new(255, 122, 59, 255), TouchSubstanceColor = Color.black, CuttingColor = Color.green, CooldownColor = Color.cyan;
+
     [SerializeField]
     private Transform LeftHand, RightHand;
 
@@ -33,7 +35,6 @@ public class SlicingTool : MonoBehaviour
     protected bool ourIsRightHandHolding;
     protected bool ourToolIsHolded = false;
 
-    private bool myIsTouchingSubstance = false;
     private bool myIsCutting = false;
 
     private Vector3 myHangingPos = Vector3.zero;
@@ -49,8 +50,13 @@ public class SlicingTool : MonoBehaviour
 
     private float myCenterEdgeDistance = 0f;
 
-    private enum TouchMode { HAND, SUBSTANCE, NONE }
+    private enum TouchMode { HAND, SUBSTANCE, CUTTING, COOLDOWN, NONE }
+    private XRGrabInteractabkeOnTwo myXrGrab;
+    private Rigidbody myRigidBody;
     private Outline myOutline;
+
+    private float mySlicerCoolDown = 0f;
+    private const float SLICER_COOLDOWN_TIME = 3f;
 
     private void Awake()
     {
@@ -60,8 +66,8 @@ public class SlicingTool : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        myCenterEdgeDistance = (transform.position.y - GetComponent<BoxCollider>().bounds.min.y);
-        myHangingPos = transform.position;
+        myXrGrab = GetComponent<XRGrabInteractabkeOnTwo>();
+        myRigidBody = GetComponent<Rigidbody>();
 
         if(GetComponent<Outline>() != null)
             myOutline = GetComponent<Outline>();
@@ -70,6 +76,9 @@ public class SlicingTool : MonoBehaviour
             myOutline = GetComponentInChildren<Outline>();
         }
         DrawOutline(TouchMode.NONE);
+
+        myCenterEdgeDistance = (transform.position.y - GetComponent<BoxCollider>().bounds.min.y);
+        myHangingPos = transform.position;
     }
 
     private void OnDestroy()
@@ -81,26 +90,31 @@ public class SlicingTool : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(myIsCutting/*myIsTouchingSubstance*/)
+        if(myIsCutting)
         {
             transform.position += (transform.forward * myForwardVelocity) * Time.deltaTime;
             transform.position += -transform.up * (myDotProduct > 0 ? 1 : 0) * PosDifference().magnitude * Time.deltaTime;
             
             if (HadSlicedThroughSubstance())
             {
-                /*myIsTouchingSubstance*/myIsCutting = false;
+                mySlicerCoolDown = SLICER_COOLDOWN_TIME;
                 //OnSlicedThrough?.Invoke(this.transform, myFrontExit, myFrontEnter, myBackEnter);
                 OnCutThrough?.Invoke(transform);
-                //GetComponent<Rigidbody>().isKinematic = false;
-                HangBack();
+                BackToHand();
 
             }
+        }
+
+        if(!myIsCutting && mySlicerCoolDown > 0f)
+        {
+            mySlicerCoolDown -= Time.deltaTime;
+            DrawOutline(mySlicerCoolDown > 0 ? TouchMode.COOLDOWN : TouchMode.NONE);
         }
     }
 
     private void LateUpdate()
     {
-        if (myIsCutting/*myIsTouchingSubstance*/)
+        if (myIsCutting)
         {
             myDotProduct = DotProductForAxis(transform.forward);
             myForwardVelocity = (PosDifference().magnitude / Time.deltaTime) * myDotProduct;
@@ -133,38 +147,15 @@ public class SlicingTool : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.CompareTag("Sliceable") && !myIsCutting/*!myIsTouchingSubstanceGetComponent<XRGrabInteractabkeOnTwo>() != null*/)
+        if(other.CompareTag("Sliceable") && !myIsCutting)
         {
-            //myIsTouchingSubstance = true;
-
-            //Destroy(GetComponent<XRGrabInteractabkeOnTwo>());
-            //Destroy(GetComponent<Rigidbody>());
-
-            ////GetComponent<Rigidbody>().isKinematic = true;
-
-            //Vector3 max = other.transform.GetComponent<BoxCollider>().bounds.max;
-            //Vector3 min = other.transform.GetComponent<BoxCollider>().bounds.min;
-            //float substanceHeight = max.y - min.y;
-
-            //mySubstanceEntPos = other.GetComponent<BoxCollider>().bounds.ClosestPoint(transform.position);
-            //transform.rotation = Quaternion.Euler(Vector3.zero);
-
-            //float degreeAngle = Vector3.Angle(transform.up, other.transform.up);
-            //float hypLenght = substanceHeight / math.cos((degreeAngle * (math.PI/180f)));
-
-            //myFrontEnter = mySubstanceEntPos + transform.forward * 2;
-            //myFrontExit = myFrontEnter + (-transform.up * (hypLenght * 2));
-            //myBackEnter = mySubstanceEntPos - transform.forward * 2;
-
-            //transform.position = mySubstanceEntPos + (transform.up * myCenterEdgeDistance);
-            //mySubstanceExitPos = mySubstanceEntPos + (-transform.up * hypLenght);
-
-            ////OnHitSubstance?.Invoke(mySubstanceEntPos, (mySubstanceEntPos + (-transform.up * hypLenght)), transform.forward);
-            OnSlicerTouching?.Invoke(other.name);
-            //DrawOutline(TouchMode.SUBSTANCE);
-
-            if(ActiveCutting())
-                SetCuttingPos(other.transform);
+            if (myIsCutting)
+            {
+                OnSlicerTouching?.Invoke(other.name);
+                DrawOutline(TouchMode.SUBSTANCE);
+            }
+            if(ActiveCutting() && mySlicerCoolDown <= 0f)
+                StartCutting(other.transform);
 
         }
 
@@ -175,14 +166,11 @@ public class SlicingTool : MonoBehaviour
         }
     }
 
-    private void SetCuttingPos(Transform aTransform)
+    private void StartCutting(Transform aTransform)
     {
-        /*myIsTouchingSubstance*/myIsCutting = true;
-
-        Destroy(GetComponent<XRGrabInteractabkeOnTwo>());
-        Destroy(GetComponent<Rigidbody>());
-
-        //GetComponent<Rigidbody>().isKinematic = true;
+        //Destroy(GetComponent<XRGrabInteractabkeOnTwo>());
+        //Destroy(GetComponent<Rigidbody>());
+        CuttingSwitch(true);
 
         Vector3 max = aTransform.GetComponent<BoxCollider>().bounds.max;
         Vector3 min = aTransform.GetComponent<BoxCollider>().bounds.min;
@@ -192,22 +180,27 @@ public class SlicingTool : MonoBehaviour
         transform.rotation = Quaternion.Euler(Vector3.zero);
 
         float degreeAngle = Vector3.Angle(transform.up, aTransform.up);
-        float hypLenght = substanceHeight / math.cos((degreeAngle * (math.PI / 180f)));
+        float thickness = substanceHeight / math.cos((degreeAngle * (math.PI / 180f)));
 
         myFrontEnter = mySubstanceEntPos + transform.forward * 2;
-        myFrontExit = myFrontEnter + (-transform.up * (hypLenght * 2));
+        myFrontExit = myFrontEnter + (-transform.up * (thickness * 2));
         myBackEnter = mySubstanceEntPos - transform.forward * 2;
 
         transform.position = mySubstanceEntPos + (transform.up * myCenterEdgeDistance);
-        mySubstanceExitPos = mySubstanceEntPos + (-transform.up * hypLenght);
+        mySubstanceExitPos = mySubstanceEntPos + (-transform.up * thickness);
 
-        //OnHitSubstance?.Invoke(mySubstanceEntPos, (mySubstanceEntPos + (-transform.up * hypLenght)), transform.forward);
+        //OnHitSubstance?.Invoke(mySubstanceEntPos, (mySubstanceEntPos + (-transform.up * thickness)), transform.forward);
         //OnSlicerTouching?.Invoke(aTransform.name);
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("LeftHandTag") || other.CompareTag("RightHandTag"))
+        {
+            DrawOutline(TouchMode.NONE);
+        }
+
+        if (other.CompareTag("Sliceable") && !myIsCutting)
         {
             DrawOutline(TouchMode.NONE);
         }
@@ -235,7 +228,7 @@ public class SlicingTool : MonoBehaviour
             ourToolIsHolded = ourIsRightHandHolding = true;
         }
 
-        DrawOutline(0);
+        DrawOutline(TouchMode.NONE);
     }
 
     private bool ActiveCutting()
@@ -249,9 +242,11 @@ public class SlicingTool : MonoBehaviour
 
     private void DropSlicer()
     {
-        if (myIsCutting/*myIsTouchingSubstance*/)
+        if (myIsCutting)
             return;
         ourToolIsHolded = ourIsRightHandHolding = ourIsLeftHandHolding = false;
+
+        HangBack();
     }
 
     private bool HadSlicedThroughSubstance()
@@ -262,16 +257,23 @@ public class SlicingTool : MonoBehaviour
 
     private void HangBack()
     {
+        CuttingSwitch(false);
+
         transform.position = myHangingPos;
         transform.eulerAngles = new Vector3(0,90,0);
 
         ourToolIsHolded = ourIsLeftHandHolding = ourIsRightHandHolding = false;
 
-
-        transform.AddComponent<Rigidbody>().useGravity = false;
-        transform.AddComponent<XRGrabInteractabkeOnTwo>().GetAttachTransform(LeftAttach, RightAttach);
+        //transform.AddComponent<Rigidbody>().useGravity = false;
+        //transform.AddComponent<XRGrabInteractabkeOnTwo>().GetAttachTransform(LeftAttach, RightAttach);
 
         DrawOutline(TouchMode.NONE);
+    }
+
+    private void BackToHand()
+    {
+        transform.position = GetGrabHandPos();
+        CuttingSwitch(false);
     }
 
     private void DrawOutline(TouchMode aMode)
@@ -286,9 +288,31 @@ public class SlicingTool : MonoBehaviour
         switch (aMode)
         {
             case TouchMode.HAND:
-                myOutline.OutlineMode = Outline.Mode.OutlineVisible; break;
+                myOutline.OutlineMode = Outline.Mode.OutlineVisible;
+                myOutline.OutlineColor = HandTouchColor;
+                break;
             case TouchMode.SUBSTANCE:
-                myOutline.OutlineMode = Outline.Mode.SilhouetteOnly; break;
+                myOutline.OutlineMode = Outline.Mode.OutlineVisible;
+                myOutline.OutlineColor = TouchSubstanceColor;
+                break;
+            case TouchMode.CUTTING:
+                myOutline.OutlineMode = Outline.Mode.SilhouetteOnly; 
+                myOutline.OutlineColor = CuttingColor;
+                break;
+            case TouchMode.COOLDOWN:
+                myOutline.OutlineMode = Outline.Mode.OutlineVisible;
+                myOutline.OutlineColor = CooldownColor;
+                break;
         }
+    }
+
+    private void CuttingSwitch(bool isOn)
+    {
+        myIsCutting = isOn;
+
+        myXrGrab.enabled = !isOn;
+        myRigidBody.isKinematic = isOn;
+        
+        DrawOutline(isOn ? TouchMode.CUTTING : TouchMode.NONE);
     }
 }
